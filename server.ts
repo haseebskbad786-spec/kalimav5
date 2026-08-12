@@ -63,7 +63,7 @@ async function startServer() {
     console.log("Loaded existing database from db.json successfully");
   }
 
-  const HARDCODED_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxao2v_cKiIznKc98Td20VsOKe1-niZmF9pk1qo1s3suIUTy4AcUNyFCI485XXKGR3r/exec";
+  const HARDCODED_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxmpPf0Q2Gzo8RMRpM1rAhQU28AqACYMFJqBzw5pvoIrWY5B1YxKKhRbp8THAQRr1sz/exec";
 
   // Helper to fetch remote database from Google Apps Script Web App
   async function fetchFromAppsScript(): Promise<any | null> {

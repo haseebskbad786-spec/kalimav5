@@ -76,7 +76,7 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Directly embedded Google Apps Script Web App fetch URL
-  const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxao2v_cKiIznKc98Td20VsOKe1-niZmF9pk1qo1s3suIUTy4AcUNyFCI485XXKGR3r/exec';
+  const APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxmpPf0Q2Gzo8RMRpM1rAhQU28AqACYMFJqBzw5pvoIrWY5B1YxKKhRbp8THAQRr1sz/exec';
 
   const fetchAppsScriptDataDirectly = async (): Promise<boolean> => {
     try {

@@ -3050,7 +3050,7 @@ export default function Settings({
                 All users opening this app seamlessly fetch real-time data from your Google Sheet backend automatically. No configuration needed!
               </p>
               <div className="p-2 bg-white/90 rounded-lg border border-emerald-200 font-mono text-[10px] text-emerald-900 break-all select-all flex items-center justify-between gap-2">
-                <span>https://script.google.com/macros/s/AKfycbxao2v_cKiIznKc98Td20VsOKe1-niZmF9pk1qo1s3suIUTy4AcUNyFCI485XXKGR3r/exec</span>
+                <span>https://script.google.com/macros/s/AKfycbxmpPf0Q2Gzo8RMRpM1rAhQU28AqACYMFJqBzw5pvoIrWY5B1YxKKhRbp8THAQRr1sz/exec</span>
               </div>
             </div>
 
