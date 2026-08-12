@@ -6,6 +6,7 @@ import {
   isAutoSyncEnabled, 
   fetchDataFromGoogleSheet 
 } from './googleSheets';
+import initialSeedData from '../db.json';
 
 export const GENDERS = ['Boys', 'Girls', 'General'] as const;
 export const AGES = ['Kids', 'Sub Junior', 'Junior', 'Senior', 'Super Senior'] as const;
@@ -95,6 +96,10 @@ export const DEFAULT_TEAMS: Team[] = [
 ];
 
 export function defaultDB(): Database {
+  const seed = normalizeDB(initialSeedData);
+  if (seed && seed.teams && seed.teams.length > 0) {
+    return seed;
+  }
   return {
     teams: DEFAULT_TEAMS,
     programs: [],

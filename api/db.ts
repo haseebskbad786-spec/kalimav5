@@ -1,7 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import initialDb from '../db.json';
 
-// Memory cache for Vercel serverless instance
-let cachedDb: any = null;
+// Memory cache for Vercel serverless instance initialized with seed database
+let cachedDb: any = initialDb;
 
 export default async function handler(req: any, res: any) {
   // CORS Headers
