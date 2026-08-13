@@ -301,13 +301,15 @@ export default function App() {
     setDb(saved);
 
     pushToServer(saved).then(res => {
-      if (res && res.serverDb) {
+      if (res && res.success && res.serverDb) {
         const normalized = normalizeDB(res.serverDb) || res.serverDb;
-        const merged = mergeDatabase(dbRef.current, normalized);
-        const calculated = calculatePoints(merged);
-        saveDBLocal(calculated, true);
-        dbRef.current = calculated;
-        setDb(calculated);
+        if ((normalized.lastModified || 0) > (dbRef.current?.lastModified || 0)) {
+          const merged = mergeDatabase(dbRef.current, normalized);
+          const calculated = calculatePoints(merged);
+          saveDBLocal(calculated, true);
+          dbRef.current = calculated;
+          setDb(calculated);
+        }
       }
     });
     pushToFirebase(saved);

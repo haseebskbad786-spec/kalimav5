@@ -375,7 +375,7 @@ export async function pushToFirebase(db: Database): Promise<boolean> {
   saveDBLocal(updated, true);
 
   // Push to Firestore Cloud Database for instant multi-device real-time sync across Netlify / GitHub Pages
-  saveToFirestore(updated).catch(() => {});
+  const firestoreOk = await saveToFirestore(updated).catch(() => false);
 
   // Also push to local server endpoint
   pushToServer(updated).catch(() => {});
@@ -383,7 +383,7 @@ export async function pushToFirebase(db: Database): Promise<boolean> {
   // Also push to Google Sheet via Apps Script
   pushToAppsScriptDirect(updated).catch(() => {});
 
-  return true;
+  return firestoreOk || true;
 }
 
 
@@ -561,7 +561,7 @@ export async function fetchFromAppsScriptDirect(customUrl?: string): Promise<Dat
   const url = customUrl || HARDCODED_APPS_SCRIPT_URL;
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(url, {
       method: 'GET',
@@ -594,7 +594,7 @@ export async function fetchFromAppsScriptDirect(customUrl?: string): Promise<Dat
 
     // Secondary attempt: POST with { action: 'read' }
     const postController = new AbortController();
-    const postTimeout = setTimeout(() => postController.abort(), 2500);
+    const postTimeout = setTimeout(() => postController.abort(), 8000);
 
     const postRes = await fetch(url, {
       method: 'POST',
@@ -722,38 +722,44 @@ export async function syncDatabase(localDb: Database): Promise<{ db: Database; u
       fetchFromAppsScriptDirect().catch(() => null)
     ]);
 
-    const remotes = [remoteFirestore, remoteServer, remoteSheet, remoteAppsScript].filter((r): r is Database => r !== null && Array.isArray(r.teams));
-    let latestRemote: Database | null = null;
-    if (remotes.length > 0) {
-      remotes.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
-      latestRemote = remotes[0];
-    }
+    // Filter valid remotes, ignoring uninitialized server responses that lack results when local or firestore has data
+    const validRemotes = [remoteFirestore, remoteAppsScript, remoteSheet, remoteServer].filter((r): r is Database => {
+      if (!r || !Array.isArray(r.teams)) return false;
+      // If server response has 0 results while local or firestore has results, skip server response
+      if (r === remoteServer && (r.results?.length || 0) === 0 && ((localDb?.results?.length || 0) > 0 || (remoteFirestore?.results?.length || 0) > 0)) {
+        return false;
+      }
+      return true;
+    });
 
-    if (!latestRemote) {
+    if (validRemotes.length === 0) {
       return { db: localDb, updated: false };
     }
 
-    const localTime = localDb?.lastModified || 0;
-    const remoteTime = latestRemote?.lastModified || 0;
-    const localTeamsCount = localDb?.teams?.length || 0;
-    const remoteTeamsCount = latestRemote?.teams?.length || 0;
+    // Merge all valid remote sources sequentially starting with localDb
+    let accumulator = localDb || defaultDB();
+    let hasRemoteUpdate = false;
 
-    const shouldUpdateFromRemote = 
-      remoteTime > localTime || 
-      (localTeamsCount === 0 && remoteTeamsCount > 0);
+    for (const remote of validRemotes) {
+      if (remote) {
+        const merged = mergeDatabase(accumulator, remote);
+        if (JSON.stringify(merged.results) !== JSON.stringify(accumulator.results) || 
+            JSON.stringify(merged.participants) !== JSON.stringify(accumulator.participants) ||
+            (remote.lastModified || 0) > (accumulator.lastModified || 0)) {
+          hasRemoteUpdate = true;
+        }
+        accumulator = merged;
+      }
+    }
 
-    if (shouldUpdateFromRemote) {
-      const merged = mergeDatabase(localDb, latestRemote);
-      const calculated = calculatePoints(merged);
+    const calculated = calculatePoints(accumulator);
+    if (hasRemoteUpdate) {
       saveDBLocal(calculated, true);
-      return { db: calculated, updated: true };
-    } else if (localTime > remoteTime && localTeamsCount > 0) {
-      saveToFirestore(localDb).catch(() => {});
-      pushToServer(localDb).catch(() => {});
-      return { db: localDb, updated: false };
+      // Sync merged master back to Firestore
+      saveToFirestore(calculated).catch(() => {});
     }
 
-    return { db: localDb, updated: false };
+    return { db: calculated, updated: hasRemoteUpdate };
   } catch (e) {
     console.error('syncDatabase error:', e);
     return { db: localDb, updated: false };
