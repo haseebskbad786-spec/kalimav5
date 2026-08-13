@@ -415,18 +415,19 @@ export function mergeSettings(localSettings: Settings, remoteSettings: Settings,
   };
 }
 
-export function mergeDatabase(localDb: Database, remoteDb: Database): Database {
+export function mergeDatabase(localDb: Database, remoteDb: Database, forcePreferRemote: boolean = false): Database {
   if (!localDb) return remoteDb;
   if (!remoteDb) return localDb;
 
   const localTime = localDb.lastModified || 0;
   const remoteTime = remoteDb.lastModified || 0;
 
-  // Prefer remote if remote contains data (results/programs/participants) OR if remote timestamp is newer/equal
+  // Prefer remote if forced, or if remote contains data/results/participants, or if remote timestamp is reasonably close
   const remoteHasData = (remoteDb.results?.length || 0) > 0 || (remoteDb.participants?.length || 0) > 0 || (remoteDb.programs?.length || 0) > 0;
   const localHasData = (localDb.results?.length || 0) > 0 || (localDb.participants?.length || 0) > 0;
 
-  const preferRemote = remoteTime >= localTime - 600000 
+  const preferRemote = forcePreferRemote
+    || remoteTime >= localTime - 86400000 
     || (remoteHasData && !localHasData)
     || (remoteHasData && (remoteDb.results?.length || 0) >= (localDb.results?.length || 0));
 

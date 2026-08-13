@@ -155,7 +155,7 @@ export default function App() {
         const normalized = normalizeDB(firestoreData);
         if (normalized) {
           const currentLocal = dbRef.current || loadDB();
-          const merged = mergeDatabase(currentLocal, normalized);
+          const merged = mergeDatabase(currentLocal, normalized, true);
           const calculated = calculatePoints(merged);
           saveDBLocal(calculated, true);
           dbRef.current = calculated;
@@ -164,8 +164,8 @@ export default function App() {
       }
     });
 
-    // Fallback polling every 5 seconds across all devices/phones
-    const pollInterval = setInterval(syncData, 5000);
+    // Fallback polling every 3 seconds across all devices/phones
+    const pollInterval = setInterval(syncData, 3000);
 
     // Sync across tabs in the same browser
     let channel: any = null;
