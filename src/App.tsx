@@ -12,6 +12,7 @@ import {
   pushToFirebase, 
   pushToServer,
   syncDatabase,
+  fetchFromAppsScriptDirect,
   calculatePoints, 
   normalizeDB,
   defaultDB, 
@@ -80,90 +81,25 @@ export default function App() {
 
   const fetchAppsScriptDataDirectly = async (): Promise<boolean> => {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
+      const normalized = await fetchFromAppsScriptDirect();
+      if (normalized && Array.isArray(normalized.teams)) {
+        const currentLocal = dbRef.current || loadDB();
+        const merged = mergeDatabase(currentLocal, normalized);
+        const calculated = calculatePoints(merged);
 
-      // 1. Primary GET fetch request directly to Google Apps Script Web App URL
-      const res = await fetch(APPS_SCRIPT_WEB_APP_URL, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: { 
-          'Accept': 'application/json, text/plain, */*',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        },
-        redirect: 'follow',
-        signal: controller.signal
-      });
-      clearTimeout(timeout);
+        const currentResults = currentLocal.results || [];
+        const newResults = calculated.results || [];
 
-      if (res.ok) {
-        const text = await res.text();
-        if (text && !text.includes('Script function not found')) {
-          try {
-            const parsed = JSON.parse(text);
-            const dbObj = parsed.db || parsed.data || parsed.result || parsed;
-            if (dbObj && typeof dbObj === 'object' && Array.isArray(dbObj.teams)) {
-              const normalized = normalizeDB(dbObj);
-              if (normalized) {
-                const currentLocal = dbRef.current || loadDB();
-                const remoteTime = normalized.lastModified || 0;
-                const localTime = currentLocal.lastModified || 0;
-                if (remoteTime > localTime) {
-                  const merged = mergeDatabase(currentLocal, normalized);
-                  const calculated = calculatePoints(merged);
-                  saveDBLocal(calculated, true);
-                  dbRef.current = calculated;
-                  setDb(calculated);
-                  return true;
-                }
-              }
-            }
-          } catch (e) {}
-        }
-      }
+        const hasChanges = 
+          newResults.length > 0 ||
+          (normalized.lastModified || 0) >= (currentLocal.lastModified || 0) ||
+          JSON.stringify(newResults) !== JSON.stringify(currentResults);
 
-      // 2. Secondary POST read fetch request fallback directly to Google Apps Script Web App URL
-      const postController = new AbortController();
-      const postTimeout = setTimeout(() => postController.abort(), 8000);
-
-      const postRes = await fetch(APPS_SCRIPT_WEB_APP_URL, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 
-          'Content-Type': 'text/plain',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        },
-        body: JSON.stringify({ action: 'read' }),
-        redirect: 'follow',
-        signal: postController.signal
-      });
-      clearTimeout(postTimeout);
-
-      if (postRes.ok) {
-        const postText = await postRes.text();
-        if (postText && !postText.includes('Script function not found')) {
-          try {
-            const parsed = JSON.parse(postText);
-            const dbObj = parsed.db || parsed.data || parsed.result || parsed;
-            if (dbObj && typeof dbObj === 'object' && Array.isArray(dbObj.teams)) {
-              const normalized = normalizeDB(dbObj);
-              if (normalized) {
-                const currentLocal = dbRef.current || loadDB();
-                const remoteTime = normalized.lastModified || 0;
-                const localTime = currentLocal.lastModified || 0;
-                if (remoteTime > localTime) {
-                  const merged = mergeDatabase(currentLocal, normalized);
-                  const calculated = calculatePoints(merged);
-                  saveDBLocal(calculated, true);
-                  dbRef.current = calculated;
-                  setDb(calculated);
-                  return true;
-                }
-              }
-            }
-          } catch (e) {}
+        if (hasChanges) {
+          saveDBLocal(calculated, true);
+          dbRef.current = calculated;
+          setDb(calculated);
+          return true;
         }
       }
     } catch (e) {
