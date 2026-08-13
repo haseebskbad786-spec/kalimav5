@@ -2416,14 +2416,32 @@ export default function AdminDashboard({ db, onUpdateDb, onAddResultDirectly, on
 
   return (
     <div className="view active pb-20 max-w-2xl mx-auto space-y-4">
+      {/* Master Admin Page Banner */}
+      <div className="p-3.5 bg-gradient-to-r from-emerald-900 via-brand-green-900 to-emerald-950 text-white rounded-2xl border-2 border-brand-gold-500/50 shadow-md space-y-1 select-none">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-brand-gold-400 animate-ping" />
+            <h2 className="font-display font-extrabold text-brand-gold-300 text-sm md:text-base">
+              🛡️ MASTER ADMIN PANEL (പ്രധാന അഡ്മിൻ കൺട്രോൾ പേജ്)
+            </h2>
+          </div>
+          <span className="px-2.5 py-0.5 bg-brand-gold-500/20 text-brand-gold-300 text-[10px] font-mono font-bold rounded-full border border-brand-gold-500/30">
+            LIVE MASTER
+          </span>
+        </div>
+        <p className="text-[11px] text-emerald-100/90 leading-snug">
+          ഈ പേജിൽ നിന്നു നൽകുന്ന റിസൾട്ടുകളും ഡാറ്റകളും തത്സമയം (Real-time) ക്ലൗഡ് വഴി വേഴ്സൽ (Vercel), നെറ്റ്ലിഫായ് (Netlify) എന്നീ എല്ലാ മൊബൈൽ ഫോണുകളിലേക്കും തനിയെ അപ്‌ഡേറ്റ് ആകുന്നതാണ്!
+        </p>
+      </div>
+
       {/* Title & Mode Switcher */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-brand-gold-500 animate-pulse" />
-            <h2 className="font-display font-bold text-brand-green-950 text-base md:text-lg">
+            <h3 className="font-display font-bold text-brand-green-950 text-base md:text-lg">
               System Admin Dashboard
-            </h2>
+            </h3>
           </div>
           {adminMode === 'management' && (
             <button

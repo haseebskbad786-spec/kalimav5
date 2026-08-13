@@ -421,8 +421,14 @@ export function mergeDatabase(localDb: Database, remoteDb: Database): Database {
 
   const localTime = localDb.lastModified || 0;
   const remoteTime = remoteDb.lastModified || 0;
-  // Prefer remote if remote timestamp is newer, equal, or within clock skew range (within 10 seconds), or if local has no data
-  const preferRemote = remoteTime >= localTime - 10000 || (localDb.programs?.length === 0 && remoteDb.programs?.length > 0);
+
+  // Prefer remote if remote contains data (results/programs/participants) OR if remote timestamp is newer/equal
+  const remoteHasData = (remoteDb.results?.length || 0) > 0 || (remoteDb.participants?.length || 0) > 0 || (remoteDb.programs?.length || 0) > 0;
+  const localHasData = (localDb.results?.length || 0) > 0 || (localDb.participants?.length || 0) > 0;
+
+  const preferRemote = remoteTime >= localTime - 600000 
+    || (remoteHasData && !localHasData)
+    || (remoteHasData && (remoteDb.results?.length || 0) >= (localDb.results?.length || 0));
 
   const mergedSettings = mergeSettings(localDb?.settings, remoteDb?.settings, preferRemote);
 
